@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from ..core.models import JobAnalysisResult
+from ..utils.logger import setup_logger
 
 
 class ReportGenerator:
@@ -12,6 +13,7 @@ class ReportGenerator:
     def __init__(self, output_dir: str = "reports"):
         self.reports_dir = Path(output_dir)
         self.reports_dir.mkdir(exist_ok=True)
+        self.logger = setup_logger("galileo.reporting")
 
     def generate_and_save_reports(
         self, results: List[JobAnalysisResult], provider: str, region: str
@@ -39,15 +41,16 @@ class ReportGenerator:
             summary.get("deep_analysis_candidates", []), timestamp
         )
 
-        print(f"Reports saved to {self.reports_dir}/")
-        print(f"  - JSON: preliminary_analysis_{timestamp}.json")
-        print(f"  - CSV: jobs_inventory_{timestamp}.csv")
-        print(f"  - Candidates: deep_analysis_candidates_{timestamp}.txt")
+        self.logger.info(f"Reports saved to {self.reports_dir}/")
+        self.logger.info(f"  - JSON: preliminary_analysis_{timestamp}.json")
+        self.logger.info(f"  - CSV: jobs_inventory_{timestamp}.csv")
+        self.logger.info(f"  - Candidates: deep_analysis_candidates_{timestamp}.txt")
 
     def _generate_summary(
         self, results: List[JobAnalysisResult], provider: str, region: str
     ) -> Dict[str, Any]:
         """Generate executive summary"""
+        self.logger.debug("Generating executive summary")
         categories = {}
         total_cost = 0
         deep_analysis_candidates = []
@@ -80,7 +83,7 @@ class ReportGenerator:
             if r.idle_analysis.category.value in ["ABANDONED", "NEVER_RUN"]
         )
 
-        return {
+        summary_data = {
             "total_jobs": len(results),
             "successful_analyses": len([r for r in results if hasattr(r, "job_name")]),
             "categories_distribution": categories,
@@ -95,6 +98,13 @@ class ReportGenerator:
                 deep_analysis_candidates, key=lambda x: x["cost"], reverse=True
             )[:20],
         }
+
+        self.logger.info(
+            f"Summary generated: {len(results)} jobs, "
+            f"R$ {total_cost:.2f}/month total, "
+            f"R$ {potential_savings:.2f}/month potential savings"
+        )
+        return summary_data
 
     def _result_to_dict(self, result: JobAnalysisResult) -> Dict[str, Any]:
         """Convert JobAnalysisResult to dictionary for JSON serialization"""
@@ -148,80 +158,98 @@ class ReportGenerator:
     def _save_json_report(self, analysis_data: Dict[str, Any], timestamp: str):
         """Save complete JSON report"""
         json_path = self.reports_dir / f"preliminary_analysis_{timestamp}.json"
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(analysis_data, f, indent=2, default=str, ensure_ascii=False)
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(analysis_data, f, indent=2, default=str, ensure_ascii=False)
+            self.logger.debug(f"JSON report saved: {json_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to save JSON report: {e}")
+            raise
 
     def _save_csv_report(self, results: List[JobAnalysisResult], timestamp: str):
         """Save CSV report for analysis with enhanced fields"""
         csv_path = self.reports_dir / f"jobs_inventory_{timestamp}.csv"
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(
-                [
-                    "job_name",
-                    "category",
-                    "days_idle",
-                    "priority",
-                    "monthly_cost_brl",
-                    "worker_type",
-                    "number_of_workers",
-                    "max_capacity",
-                    "allocated_capacity",
-                    "job_type",
-                    "execution_class",
-                    "script_type",
-                    "script_location",
-                    "avg_execution_minutes",
-                    "glue_version",
-                    "description",
-                    "environment",
-                    "team",
-                    "inferred_purpose",
-                    "deep_analysis_recommended",
-                    "deep_analysis_reasons",
-                ]
-            )
-
-            for result in results:
-                candidates = result.candidate_for_deep_analysis
-                reasons = [k for k, v in candidates.items() if v]
-
+        try:
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
                 writer.writerow(
                     [
-                        result.job_name,
-                        result.idle_analysis.category.value,
-                        result.idle_analysis.days_idle,
-                        result.idle_analysis.priority.value,
-                        result.cost_estimate.estimated_monthly_brl,
-                        result.job_config.worker_type,
-                        result.job_config.number_of_workers,
-                        result.job_config.max_capacity,
-                        result.job_config.allocated_capacity,
-                        result.job_config.job_type,
-                        result.job_config.execution_class,
-                        result.job_config.script_type,
-                        result.job_config.script_location,
-                        result.job_config.avg_execution_time_minutes,
-                        result.job_config.glue_version,
-                        result.job_config.description or "",
-                        result.tags_info.environment,
-                        result.tags_info.team,
-                        result.code_analysis.inferred_purpose,
-                        any(candidates.values()),
-                        "; ".join(reasons),
+                        "job_name",
+                        "category",
+                        "days_idle",
+                        "priority",
+                        "monthly_cost_brl",
+                        "worker_type",
+                        "number_of_workers",
+                        "max_capacity",
+                        "allocated_capacity",
+                        "job_type",
+                        "execution_class",
+                        "script_type",
+                        "script_location",
+                        "avg_execution_minutes",
+                        "glue_version",
+                        "description",
+                        "environment",
+                        "team",
+                        "inferred_purpose",
+                        "deep_analysis_recommended",
+                        "deep_analysis_reasons",
                     ]
                 )
+
+                for result in results:
+                    candidates = result.candidate_for_deep_analysis
+                    reasons = [k for k, v in candidates.items() if v]
+
+                    writer.writerow(
+                        [
+                            result.job_name,
+                            result.idle_analysis.category.value,
+                            result.idle_analysis.days_idle,
+                            result.idle_analysis.priority.value,
+                            result.cost_estimate.estimated_monthly_brl,
+                            result.job_config.worker_type,
+                            result.job_config.number_of_workers,
+                            result.job_config.max_capacity,
+                            result.job_config.allocated_capacity,
+                            result.job_config.job_type,
+                            result.job_config.execution_class,
+                            result.job_config.script_type,
+                            result.job_config.script_location,
+                            result.job_config.avg_execution_time_minutes,
+                            result.job_config.glue_version,
+                            result.job_config.description or "",
+                            result.tags_info.environment,
+                            result.tags_info.team,
+                            result.code_analysis.inferred_purpose,
+                            any(candidates.values()),
+                            "; ".join(reasons),
+                        ]
+                    )
+            self.logger.debug(f"CSV report saved: {csv_path}")
+        except Exception as e:
+            self.logger.error(f"Failed to save CSV report: {e}")
+            raise
 
     def _save_candidates_list(self, candidates: List[Dict], timestamp: str):
         """Save list of candidates for deep analysis"""
         candidates_path = self.reports_dir / f"deep_analysis_candidates_{timestamp}.txt"
-        with open(candidates_path, "w", encoding="utf-8") as f:
-            f.write("# Deep Analysis Candidates\n")
-            f.write(f"# Generated at: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n")
+        try:
+            with open(candidates_path, "w", encoding="utf-8") as f:
+                f.write("# Deep Analysis Candidates\n")
+                f.write(
+                    f"# Generated at: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+                )
 
-            for candidate in candidates:
-                f.write(f"Job: {candidate['job_name']}\n")
-                f.write(f"Category: {candidate['category']}\n")
-                f.write(f"Cost: R$ {candidate['cost']:.2f}/month\n")
-                f.write(f"Reasons: {', '.join(candidate['reasons'])}\n")
-                f.write("-" * 50 + "\n\n")
+                for candidate in candidates:
+                    f.write(f"Job: {candidate['job_name']}\n")
+                    f.write(f"Category: {candidate['category']}\n")
+                    f.write(f"Cost: R$ {candidate['cost']:.2f}/month\n")
+                    f.write(f"Reasons: {', '.join(candidate['reasons'])}\n")
+                    f.write("-" * 50 + "\n\n")
+            self.logger.debug(f"Candidates list saved: {candidates_path}")
+            self.logger.info(f"Found {len(candidates)} candidates for deep analysis")
+        except Exception as e:
+            self.logger.error(f"Failed to save candidates list: {e}")
+            raise
