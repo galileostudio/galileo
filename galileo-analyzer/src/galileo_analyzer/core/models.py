@@ -80,3 +80,59 @@ class JobAnalysisResult:
     code_analysis: QuickCodeAnalysis
     recent_runs_count: int
     candidate_for_deep_analysis: Dict[str, bool]
+
+
+@dataclass
+class CodeAnalysis:
+    script_content: Optional[str] = None
+    script_size_kb: Optional[float] = None
+    complexity_score: Optional[int] = None
+    dependencies: List[str] = None
+    sql_queries_count: Optional[int] = None
+    spark_operations: List[str] = None
+    performance_issues: List[str] = None
+    security_issues: List[str] = None
+    best_practices_violations: List[str] = None
+
+
+@dataclass
+class PerformanceAnalysis:
+    avg_cpu_utilization: Optional[float] = None
+    avg_memory_utilization: Optional[float] = None
+    data_processed_gb: Optional[float] = None
+    cost_per_gb: Optional[float] = None
+    efficiency_score: Optional[float] = None
+    bottlenecks: List[str] = None
+    optimization_opportunities: List[str] = None
+
+
+@dataclass
+class DependencyAnalysis:
+    input_sources: List[str] = None
+    output_destinations: List[str] = None
+    upstream_jobs: List[str] = None
+    downstream_jobs: List[str] = None
+    schedule_conflicts: List[str] = None
+    data_lineage: Dict[str, Any] = None
+
+
+@dataclass
+class AIRecommendations:
+    optimization_suggestions: List[str] = None
+    cost_reduction_opportunities: List[str] = None
+    modernization_recommendations: List[str] = None
+    risk_assessment: str = None
+    priority_score: Optional[float] = None
+    estimated_savings_brl: Optional[float] = None
+
+
+@dataclass
+class DeepAnalysisResult:
+    job_name: str
+    timestamp: datetime
+    preliminary_result: JobAnalysisResult
+    code_analysis: CodeAnalysis
+    performance_analysis: PerformanceAnalysis
+    dependency_analysis: DependencyAnalysis
+    ai_recommendations: AIRecommendations
+    analysis_duration_seconds: Optional[float] = None
