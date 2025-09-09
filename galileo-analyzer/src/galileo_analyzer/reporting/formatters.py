@@ -94,7 +94,16 @@ class ReportGenerator:
                 'worker_type': result.job_config.worker_type,
                 'number_of_workers': result.job_config.number_of_workers,
                 'timeout': result.job_config.timeout,
-                'max_retries': result.job_config.max_retries
+                'max_retries': result.job_config.max_retries,
+                'max_capacity': result.job_config.max_capacity,
+                'allocated_capacity':result.job_config.allocated_capacity,
+                'description': result.job_config.description,
+                'job_mode': result.job_config.job_mode,
+                'job_type': result.job_config.job_type,
+                "execution_class": result.job_config.execution_class,
+                'script_type': result.job_config.script_type,
+                'script_location': result.job_config.script_location,
+                'avg_execution_time_minutes': result.job_config.avg_execution_time_minutes
             },
             'idle_analysis': {
                 'category': result.idle_analysis.category.value,
@@ -131,13 +140,16 @@ class ReportGenerator:
             json.dump(analysis_data, f, indent=2, default=str, ensure_ascii=False)
     
     def _save_csv_report(self, results: List[JobAnalysisResult], timestamp: str):
-        """Save CSV report for analysis"""
+        """Save CSV report for analysis with enhanced fields"""
         csv_path = self.reports_dir / f"jobs_inventory_{timestamp}.csv"
         with open(csv_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
                 'job_name', 'category', 'days_idle', 'priority', 'monthly_cost_brl',
-                'worker_type', 'environment', 'team', 'inferred_purpose',
+                'worker_type', 'number_of_workers', 'max_capacity',
+                'allocated_capacity','job_type', 'execution_class','script_type', 'script_location',
+                'avg_execution_minutes', 'glue_version', 'description',
+                'environment', 'team', 'inferred_purpose',
                 'deep_analysis_recommended', 'deep_analysis_reasons'
             ])
             
@@ -152,13 +164,23 @@ class ReportGenerator:
                     result.idle_analysis.priority.value,
                     result.cost_estimate.estimated_monthly_brl,
                     result.job_config.worker_type,
+                    result.job_config.number_of_workers,
+                    result.job_config.max_capacity,
+                    result.job_config.allocated_capacity,
+                    result.job_config.job_type,
+                    result.job_config.execution_class,
+                    result.job_config.script_type,
+                    result.job_config.script_location,
+                    result.job_config.avg_execution_time_minutes,
+                    result.job_config.glue_version,
+                    result.job_config.description or '',
                     result.tags_info.environment,
                     result.tags_info.team,
                     result.code_analysis.inferred_purpose,
                     any(candidates.values()),
                     '; '.join(reasons)
                 ])
-    
+
     def _save_candidates_list(self, candidates: List[Dict], timestamp: str):
         """Save list of candidates for deep analysis"""
         candidates_path = self.reports_dir / f"deep_analysis_candidates_{timestamp}.txt"

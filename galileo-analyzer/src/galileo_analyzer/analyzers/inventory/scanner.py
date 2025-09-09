@@ -31,6 +31,10 @@ class InventoryScanner:
         job_runs = self.provider.get_recent_runs(job_name)
         self.logger.debug(f"Retrieved {len(job_runs)} recent runs for job: {job_name}")
         
+        # Calculate average execution time
+        job_config = self._extract_job_config(job_details)
+        job_config.avg_execution_time_minutes = self._calculate_avg_execution_time(job_runs)
+        
         # Independent analyses
         idle_analysis = self.categorizer.categorize_by_idle_time(job_details, job_runs)
         cost_estimate = self.cost_calculator.quick_cost_estimate(job_details, job_runs)
@@ -47,7 +51,7 @@ class InventoryScanner:
         return JobAnalysisResult(
             job_name=job_name,
             timestamp=datetime.now(),
-            job_config=self._extract_job_config(job_details),
+            job_config=job_config,  # Now includes avg execution time
             idle_analysis=idle_analysis,
             cost_estimate=cost_estimate,
             tags_info=tags_info,
@@ -55,15 +59,49 @@ class InventoryScanner:
             recent_runs_count=len(job_runs),
             candidate_for_deep_analysis=deep_analysis_reasons
         )
+
+    def _calculate_avg_execution_time(self, job_runs: List[Dict[str, Any]]) -> Optional[float]:
+        """Calculate average execution time in minutes from recent runs"""
+        if not job_runs:
+            return None
+        
+        # Get execution times from successful runs only
+        execution_times = []
+        for run in job_runs:
+            if run.get('JobRunState') == 'SUCCEEDED' and run.get('ExecutionTime'):
+                execution_times.append(run['ExecutionTime'])
+        
+        if not execution_times:
+            return None
+        
+        # Convert from seconds to minutes and return average
+        avg_seconds = sum(execution_times) / len(execution_times)
+        return round(avg_seconds / 60, 2)
+
     def _extract_job_config(self, job_details: Dict[str, Any]) -> JobConfig:
-        """Extract job configuration from job details"""
+        """Extract comprehensive job configuration from job details"""
+        # Determine job type from Command.Name
+        command = job_details.get('Command', {})
+        job_type = command.get('Name', 'unknown')  # glueetl, pythonshell, gluestreaming
+        
+        # Determine script type (script vs notebook)
+        script_location = command.get('ScriptLocation', 'unknown')
+        script_type = 'notebook' if script_location.endswith('.ipynb') else 'script'
         
         return JobConfig(
             glue_version=job_details.get('GlueVersion'),
             worker_type=job_details.get('WorkerType'),
             number_of_workers=job_details.get('NumberOfWorkers'),
             timeout=job_details.get('Timeout'),
-            max_retries=job_details.get('MaxRetries')
+            max_retries=job_details.get('MaxRetries'),
+            max_capacity=job_details.get('MaxCapacity'),
+            allocated_capacity=job_details.get("AllocatedCapacity"),
+            description=job_details.get('Description', '').strip() or None,
+            job_mode=job_details.get('JobMode'),
+            job_type=job_type,
+            execution_class=job_details.get('ExecutionClass'),
+            script_type=script_type,
+            script_location=script_location
         )
 
     def scan_jobs(self, job_names: Optional[List[str]] = None) -> List[JobAnalysisResult]:

@@ -23,6 +23,15 @@ class JobConfig:
     number_of_workers: Optional[int] = None
     timeout: Optional[int] = None
     max_retries: Optional[int] = None
+    description: Optional[str] = None
+    job_mode: Optional[str] = None
+    job_type: Optional[str] = None
+    execution_class: Optional[str] = None
+    script_type: Optional[str] = None
+    script_location: Optional[str] = None
+    avg_execution_time_minutes: Optional[float] = None
+    max_capacity: Optional[float] = None
+    allocated_capacity: Optional[int] = None
 
 @dataclass
 class IdleAnalysis:
