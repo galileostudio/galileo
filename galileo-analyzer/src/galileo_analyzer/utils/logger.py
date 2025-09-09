@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-def setup_logger(name: str = "galileo", level: str = "INFO", log_file: Optional[Path] = None) -> logging.Logger:
+def setup_logger(name: str = "galileo", level: str = "DEBUG", log_file: Optional[Path] = None) -> logging.Logger:
     """Setup centralized logging for Galileo Analyzer"""
     
     logger = logging.getLogger(name)

@@ -1,23 +1,23 @@
 import re
 from typing import Dict, Any, List
 from ...utils.validators import validate_job_name
+from ...core.models import QuickCodeAnalysis
 
 class QuickCodeAnalyzer:
     """Quick code analysis without downloading scripts"""
     
-    def quick_code_analysis(self, job_details: Dict[str, Any]) -> Dict[str, Any]:
+    def quick_code_analysis(self, job_details: Dict[str, Any]) -> QuickCodeAnalysis:
         """Superficial analysis based on script location and job name only"""
         script_location = job_details.get('Command', {}).get('ScriptLocation', '')
         job_name = job_details.get('Name', '')
         
-        analysis = {
-            'has_script': bool(script_location),
-            'script_location': script_location,
-            'inferred_purpose': self._infer_purpose_from_name(job_name),
-            'naming_issues': validate_job_name(job_name)
-        }
-        
-        return analysis
+        # CHANGE THIS: Return dataclass instead of dict
+        return QuickCodeAnalysis(
+            has_script=bool(script_location),
+            script_location=script_location,
+            inferred_purpose=self._infer_purpose_from_name(job_name),
+            naming_issues=validate_job_name(job_name)
+        )
     
     def _infer_purpose_from_name(self, job_name: str) -> str:
         """Infer job purpose from its name"""

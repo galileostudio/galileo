@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Dict, List, Any
-from ...core.models import IdleAnalysis, JobCategory, Priority
+from ...core.models import IdleAnalysis, JobCategory, Priority, CostEstimate, QuickCodeAnalysis, TagsInfo
 
 class JobCategorizer:
     
     @staticmethod
     def categorize_by_idle_time(job_details: Dict, job_runs: List[Dict]) -> IdleAnalysis:
-        """Categorização básica por tempo de inatividade"""
+        """Basic categorization by idle time"""
         now = datetime.now().replace(tzinfo=None)
         
         if not job_runs:
@@ -43,12 +43,12 @@ class JobCategorizer:
     def should_analyze_deeply(
         job_details: Dict, 
         job_runs: List[Dict],
-        cost_estimate: 'CostEstimate',
+        cost_estimate: CostEstimate,
         idle_analysis: IdleAnalysis,
-        code_analysis: 'QuickCodeAnalysis',
-        tags_info: 'TagsInfo'
+        code_analysis: QuickCodeAnalysis,  # FIXED: Proper type
+        tags_info: TagsInfo  # FIXED: Proper type
     ) -> Dict[str, bool]:
-        """Determina se job deve passar por análise profunda"""
+        """Determine if job should undergo deep analysis"""
         return {
             'high_cost': cost_estimate.estimated_monthly_brl > 500,
             'inactive_expensive': (
@@ -56,7 +56,7 @@ class JobCategorizer:
                 cost_estimate.estimated_monthly_brl > 100
             ),
             'never_run': idle_analysis.category == JobCategory.NEVER_RUN,
-            'naming_issues': len(code_analysis.naming_issues) > 0,
+            'naming_issues': len(code_analysis.naming_issues) > 0,  # Now works correctly
             'dev_in_prod': (
                 tags_info.environment in ['dev', 'test'] or 
                 'test' in job_details.get('Name', '').lower()
