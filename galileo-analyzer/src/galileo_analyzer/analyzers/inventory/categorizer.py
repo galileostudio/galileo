@@ -1,28 +1,38 @@
 from datetime import datetime
 from typing import Dict, List, Any
-from ...core.models import IdleAnalysis, JobCategory, Priority, CostEstimate, QuickCodeAnalysis, TagsInfo
+from ...core.models import (
+    IdleAnalysis,
+    JobCategory,
+    Priority,
+    CostEstimate,
+    QuickCodeAnalysis,
+    TagsInfo,
+)
+
 
 class JobCategorizer:
-    
+
     @staticmethod
-    def categorize_by_idle_time(job_details: Dict, job_runs: List[Dict]) -> IdleAnalysis:
+    def categorize_by_idle_time(
+        job_details: Dict, job_runs: List[Dict]
+    ) -> IdleAnalysis:
         """Basic categorization by idle time"""
         now = datetime.now().replace(tzinfo=None)
-        
+
         if not job_runs:
-            created_time = job_details.get('CreatedOn', now).replace(tzinfo=None)
+            created_time = job_details.get("CreatedOn", now).replace(tzinfo=None)
             days_since_creation = (now - created_time).days
             return IdleAnalysis(
                 category=JobCategory.NEVER_RUN,
                 days_idle=days_since_creation,
                 priority=Priority.CRITICAL,
-                last_run_status=None
+                last_run_status=None,
             )
-        
-        last_run = max(job_runs, key=lambda x: x['StartedOn'])
-        last_run_time = last_run['StartedOn'].replace(tzinfo=None)
+
+        last_run = max(job_runs, key=lambda x: x["StartedOn"])
+        last_run_time = last_run["StartedOn"].replace(tzinfo=None)
         days_idle = (now - last_run_time).days
-        
+
         if days_idle <= 7:
             category, priority = JobCategory.ACTIVE, Priority.LOW
         elif days_idle <= 30:
@@ -31,34 +41,35 @@ class JobCategorizer:
             category, priority = JobCategory.INACTIVE, Priority.MEDIUM
         else:
             category, priority = JobCategory.ABANDONED, Priority.HIGH
-        
+
         return IdleAnalysis(
             category=category,
             days_idle=days_idle,
             priority=priority,
-            last_run_status=last_run['JobRunState']
+            last_run_status=last_run["JobRunState"],
         )
 
     @staticmethod
     def should_analyze_deeply(
-        job_details: Dict, 
+        job_details: Dict,
         job_runs: List[Dict],
         cost_estimate: CostEstimate,
         idle_analysis: IdleAnalysis,
         code_analysis: QuickCodeAnalysis,  # FIXED: Proper type
-        tags_info: TagsInfo  # FIXED: Proper type
+        tags_info: TagsInfo,  # FIXED: Proper type
     ) -> Dict[str, bool]:
         """Determine if job should undergo deep analysis"""
         return {
-            'high_cost': cost_estimate.estimated_monthly_brl > 500,
-            'inactive_expensive': (
-                idle_analysis.category in [JobCategory.ABANDONED, JobCategory.INACTIVE] and 
-                cost_estimate.estimated_monthly_brl > 100
+            "high_cost": cost_estimate.estimated_monthly_brl > 500,
+            "inactive_expensive": (
+                idle_analysis.category in [JobCategory.ABANDONED, JobCategory.INACTIVE]
+                and cost_estimate.estimated_monthly_brl > 100
             ),
-            'never_run': idle_analysis.category == JobCategory.NEVER_RUN,
-            'naming_issues': len(code_analysis.naming_issues) > 0,  # Now works correctly
-            'dev_in_prod': (
-                tags_info.environment in ['dev', 'test'] or 
-                'test' in job_details.get('Name', '').lower()
-            )
+            "never_run": idle_analysis.category == JobCategory.NEVER_RUN,
+            "naming_issues": len(code_analysis.naming_issues)
+            > 0,  # Now works correctly
+            "dev_in_prod": (
+                tags_info.environment in ["dev", "test"]
+                or "test" in job_details.get("Name", "").lower()
+            ),
         }

@@ -3,18 +3,21 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from enum import Enum
 
+
 class JobCategory(Enum):
     ACTIVE = "ACTIVE"
-    RECENT = "RECENT" 
+    RECENT = "RECENT"
     INACTIVE = "INACTIVE"
     ABANDONED = "ABANDONED"
     NEVER_RUN = "NEVER_RUN"
+
 
 class Priority(Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
+
 
 @dataclass
 class JobConfig:
@@ -33,6 +36,7 @@ class JobConfig:
     max_capacity: Optional[float] = None
     allocated_capacity: Optional[int] = None
 
+
 @dataclass
 class IdleAnalysis:
     category: JobCategory
@@ -40,19 +44,22 @@ class IdleAnalysis:
     priority: Priority
     last_run_status: Optional[str] = None
 
+
 @dataclass
 class CostEstimate:
     hourly_cost_usd: float
     estimated_monthly_usd: float
     estimated_monthly_brl: float
 
+
 @dataclass
 class TagsInfo:
-    environment: str = 'unknown'
-    team: str = 'unknown'
-    business_domain: str = 'unknown'
-    criticality: str = 'unknown'
-    owner: str = 'unknown'
+    environment: str = "unknown"
+    team: str = "unknown"
+    business_domain: str = "unknown"
+    criticality: str = "unknown"
+    owner: str = "unknown"
+
 
 @dataclass
 class QuickCodeAnalysis:
@@ -60,6 +67,7 @@ class QuickCodeAnalysis:
     script_location: str
     inferred_purpose: str
     naming_issues: List[str]
+
 
 @dataclass
 class JobAnalysisResult:

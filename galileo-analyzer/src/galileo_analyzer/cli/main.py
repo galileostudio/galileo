@@ -1,5 +1,6 @@
 import click
 
+
 @click.command()
 @click.version_option()
 def main():
@@ -8,5 +9,6 @@ def main():
     click.echo("Use 'galileo-inventory' for job inventory analysis")
     click.echo("Use 'galileo-analyze' for deep analysis")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
