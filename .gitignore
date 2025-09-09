@@ -1,0 +1,122 @@
+### System ###
+# Windows
+[Dd]esktop.ini
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.fseventsd
+.documentRevisions-V100
+
+# Linux
+.directory
+.nfs*
+
+### Python ###
+# Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Package management
+.python-version
+.pdm.toml
+__pypackages__/
+
+# Distribuição
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+### Ruby ###
+*.gem
+.rvmrc
+.bundle/
+vendor/bundle/
+
+# Rails
+/db/*.sqlite3
+/db/*.sqlite3-journal
+/log/*.log
+/tmp/
+
+### IDEs ###
+# JetBrains (todas as IDEs)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Tags
+tags
+.tags
+TAGS
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# File System
+.DS_Store
+Thumbs.db
